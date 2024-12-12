@@ -18,7 +18,7 @@ public class MemAlloc {
     static LinkedList<MemBlock> MemoryBlockList = new LinkedList<>();
     static LinkedList<Process> WaitingList = new LinkedList<Process>();
     static LinkedList<Process> RunningList = new LinkedList<Process>();
-    static int timeOut;
+    
 
     public static void main(String[] args) {
         initializeMemory();
