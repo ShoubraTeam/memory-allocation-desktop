@@ -39,6 +39,9 @@ public class Process {
     public void setTime(){
         this.time-=1000;
     }
+    public void setAssignedBlock(MemBlock assignedBlock) {
+        this.assignedBlock = assignedBlock;
+    }
 
     @Override
     public String toString(){

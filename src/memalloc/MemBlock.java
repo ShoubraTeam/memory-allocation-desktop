@@ -28,6 +28,13 @@ public class MemBlock {
     public int getSize(){
         return size;
     }
+
+    public void setStartAdress(int s){
+        startAdress = s;
+    }
+    public void setSize(int s){
+        size = s;
+    }
     
     
 }
