@@ -1,91 +1,169 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
- */
 package memalloc;
 
+import java.util.*;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
+class MemAlloc {
+    private static final int MEMORY_SIZE = 1024;
+    private final long RANDOM_SEED = System.currentTimeMillis();
+    private final Random random = new Random(RANDOM_SEED);
 
-/**
- *
- * @author HANIN
- */
-public class MemAlloc {
-    static Queue<Process> StartingList = new LinkedList<Process>();
-    static LinkedList<MemBlock> MemoryBlockList = new LinkedList<>();
-    static LinkedList<Process> WaitingList = new LinkedList<Process>();
-    static LinkedList<Process> RunningList = new LinkedList<Process>();
-    
+    private List<MemBlock> memoryBlocks = new ArrayList<>();
+    private final Queue<Process> startingList = new LinkedList<>();
+    private final Queue<Process> runningList = new LinkedList<>();
+    static CustomPriorityQueue<Process> waitingList = new CustomPriorityQueue<Process>();
 
     public static void main(String[] args) {
-        initializeMemory();
-        initializeStartingList();
-
+        MemAlloc memAlloc = new MemAlloc();
+        memAlloc.initializeMemory();
+        memAlloc.initializeStartingList();
+        memAlloc.runSimulation();
     }
 
-    static void Update() {
-        Iterator<Process> RunningIterator = RunningList.iterator();
-        while (RunningIterator.hasNext()) {
-            Process process = RunningIterator.next();
-            process.setTime();
+    void initializeMemory() {
+        memoryBlocks.add(new MemBlock( 0, MEMORY_SIZE - 1));
+    }
+
+    void initializeStartingList() {
+        System.out.println("Using seed: " + RANDOM_SEED);
+        for (int i = 0; i < 10; i++) {
+            int size = random.nextInt(512) + 1;
+            int time = random.nextInt(10000) + 1;
+            startingList.add(new Process(size, time));
+        }
+    }
+
+    void runSimulation() {
+        int timeElapsed = 0;
+        while (!startingList.isEmpty() || !runningList.isEmpty() || !waitingList.isEmpty()) {
+            System.out.println("-----------------------");
+            System.out.println("At time: " + (++timeElapsed));
+            dispatchProcess();
+            updateRunningProcesses();
+//            updateLists();
+            displayProcesses();
+            System.out.println("-----------------------");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException interruptedException) {
+                System.out.println("interruptedException");
+            }
+        }
+    }
+
+    void dispatchProcess() {
+        if (startingList.isEmpty() && waitingList.isEmpty()) return;
+        Process process;
+        if (!waitingList.isEmpty() && !startingList.isEmpty()){
+            process = (startingList.peek().getSize() < waitingList.peek().getSize()) ? startingList.poll() : waitingList.poll();
+        } else if (!startingList.isEmpty()){
+            process = startingList.poll();
+        } else {
+            process = waitingList.poll();
+        }
+        if (process == null) return;
+        if (allocateMemory(process)) {
+            runningList.add(process);
+        } else {
+            waitingList.add(process, process.getSize());
+        }
+    }
+
+    /*
+    * Running Processes:
+    * Process ID: 8, Size: 400, Time Needed: 17
+    * Waiting Processes:
+    * Process ID: 7, Size: 405, Time Needed: 6970
+    * */
+
+    boolean allocateMemory(Process process) {
+        for (MemBlock block : memoryBlocks) {
+            System.out.println("Trying to allocate process ID: " + process.getId() + " with size = " + process.getSize() + " and block size = " + block.getSize());
+            if (block.getSize() >= process.getSize()) {
+                process.setAssignedBlock(new MemBlock(block.getStartAddress(), block.getStartAddress() + process.getSize() - 1));
+                block.setStartAddress(block.getStartAddress() + process.getSize());
+                block.setSize(block.getSize() - process.getSize());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void updateRunningProcesses() {
+        Iterator<Process> runningIterator = runningList.iterator();
+        while (runningIterator.hasNext()) {
+            Process process = runningIterator.next();
+            process.decrementBySecond();
             if (process.getTime() <= 0) {
-                RunningIterator.remove();
-                freeMemory(process);
-                System.out.println("Process " + process.getID() + " ended.");
+                runningIterator.remove();
+                releaseMemory(process);
+                System.out.println("\\-----------------------------------------------------------------------------------\\");
+                System.out.println("Process " + process.getId() + " ended");
+                System.out.println("\\-----------------------------------------------------------------------------------\\");
             }
         }
-        Iterator<Process> WaitingIterator = WaitingList.iterator();
-        while (WaitingIterator.hasNext()) {
-            Process process = WaitingIterator.next();
-            MemBlock freeBlock = findFreeBlock(process.getSize()); // Find a suitable block
-            if (freeBlock != null) {
-                allocateMemory(process, freeBlock); // Allocate memory
-                WaitingIterator.remove(); // Remove from waiting list
-                RunningList.add(process); // Move to running list
-                System.out.println("Process " + process.getID() + " moved to running list.");
-            }
-        }
-        if (!StartingList.isEmpty()) {
-            Process process = StartingList.poll();
-            MemBlock freeBlock = findFreeBlock(process.getSize());
-            if (freeBlock != null) {
-                allocateMemory(process, freeBlock);
-                RunningList.add(process);
-                System.out.println("Process " + process.getID() + " started running.");
+    }
+
+    void releaseMemory(Process process) {
+        System.out.println("Free memory of process ID: " + process.getId() + " with size: " + process.getSize());
+        MemBlock releasedBlock = process.getAssignedBlock();
+        int position = searchInsert(releasedBlock);
+        memoryBlocks.add(position, releasedBlock);
+        mergeMemoryBlocks();
+    }
+
+    void mergeMemoryBlocks() {
+//        Collections.sort(memoryBlocks, Comparator.comparingInt(block -> block.startAddress));
+        List<MemBlock> mergedBlocks = new ArrayList<>();
+        MemBlock previous = null;
+        for (MemBlock block : memoryBlocks) {
+            if (previous == null) {
+                previous = block;
+            } else if (previous.getEndAddress() + 1 == block.getStartAddress()) {
+                previous.setSize(previous.getSize() + block.getSize());
+                previous.setEndAddress(block.getEndAddress());
             } else {
-                WaitingList.add(process);
-                System.out.println("Process " + process.getID() + " added to waiting list.");
+                mergedBlocks.add(previous);
+                previous = block;
             }
-
+        }
+        if (previous != null) {
+            mergedBlocks.add(previous);
+        }
+        memoryBlocks = mergedBlocks;
+        for (MemBlock memBlock : memoryBlocks){
+            System.out.println("[MemBlock] Start address = " + memBlock.getStartAddress() + ", end address = " + memBlock.getEndAddress() + ", and size = " + memBlock.getSize());
         }
     }
-    static void freeMemory(Process p){
-        MemBlock block = p.getAssignedBlock();
-        MemoryBlockList.add(block); // Add the freed block back to the memory list
-        mergeMemoryBlocks(); // Merge adjacent free blocks (optional)
-    }
 
-    static void allocateMemory(Process process, MemBlock block) {
-        process.setAssignedBlock(new MemBlock(block.getStartAdress(), block.getStartAdress()+ process.getSize() - 1));
-        block.setStartAdress(block.getStartAdress() + process.getSize()); // Update the free block's start address
-        block.setSize(block.getSize() - process.getSize()); // Update the size of the free block
-        /*if (block.getSize()  == 0) {
-            memoryBlocks.remove(block);
-        }*/
-    }
+//    void updateLists() {
+//        if (waitingList.isEmpty())return;
+//        Process process =waitingList.peek();
+//        if (allocateMemory(process)){
+//            waitingList.remove();
+//            runningList.add(process);
+//        }
+//    }
 
-    static void initializeMemory() {
-        MemoryBlockList.add(new MemBlock(0, 1024));
-    }
-
-    static void initializeStartingList() {
-        for (int i = 1; i <= 20; i++) {
-            StartingList.add(new Process());
+    void displayProcesses() {
+        System.out.println("Running Processes:");
+        for (Process process : runningList) {
+            System.out.println(process);
         }
+        System.out.println("--------------");
+        System.out.println("Waiting Processes:");
+        waitingList.display();
+        System.out.println("--------------");
     }
-    static void mergeMemoryBlocks(){}
-    static MemBlock findFreeBlock(int size){}
+
+    public int searchInsert(MemBlock memBlockPiece) {
+        int start = 0;
+        int end = memoryBlocks.size()-1;
+
+        while (start <= end) {
+            int mid = start + (end-start)/2;
+            if (memoryBlocks.get(mid).getStartAddress() > memBlockPiece.getEndAddress()) end = mid-1;
+            else start = mid+1;
+        }
+        return start;
+    }
 }
