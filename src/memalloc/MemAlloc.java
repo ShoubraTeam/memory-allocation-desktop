@@ -4,6 +4,9 @@ import java.util.*;
 
 class MemAlloc {
     private static final int MEMORY_SIZE = 1024;
+    private static final int MAX_MEMORY_SIZE = 512;
+    private static final int MAX_TIMEOUT = 10000;
+
     private final long RANDOM_SEED = System.currentTimeMillis();
     private final Random random = new Random(RANDOM_SEED);
 
@@ -26,8 +29,8 @@ class MemAlloc {
     void initializeStartingList() {
         System.out.println("Using seed: " + RANDOM_SEED);
         for (int i = 0; i < 10; i++) {
-            int size = random.nextInt(512) + 1;
-            int time = random.nextInt(10000) + 1;
+            int size = random.nextInt(MAX_MEMORY_SIZE) + 1;
+            int time = random.nextInt(MAX_TIMEOUT) + 1;
             startingList.add(new Process(size, time));
         }
     }
