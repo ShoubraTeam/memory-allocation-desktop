@@ -1,40 +1,45 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package memalloc;
 
 /**
- *
  * @author HANIN
  */
-public class MemBlock {
-    
-    private int startAdress;
-    private int endAdress;
+class MemBlock {
+    private int startAddress;
+    private int endAddress;
     private int size;
-    
-    public MemBlock(int stAdress, int s){
-        startAdress = stAdress;
-        size = s;
-        endAdress = startAdress + size - 1;
+
+    public MemBlock(int startAddress, int endAddress) {
+        this.size = endAddress - startAddress + 1;
+        this.startAddress = startAddress;
+        this.endAddress = endAddress;
     }
-    public int getStartAdress(){
-        return startAdress;
+
+    @Override
+    public String toString() {
+        return "MemBlock [size=" + size + ", startAddress=" + startAddress + ", endAddress=" + endAddress + "]";
     }
-    public int getEndAdress(){
-        return endAdress;
+
+    public int getStartAddress(){
+        return startAddress;
     }
+
+    public int getEndAddress(){
+        return endAddress;
+    }
+
     public int getSize(){
         return size;
     }
 
-    public void setStartAdress(int s){
-        startAdress = s;
+    public void setStartAddress(int s){
+        startAddress = s;
     }
+
+    public void setEndAddress(int e){
+        endAddress = e;
+    }
+
     public void setSize(int s){
         size = s;
     }
-    
-    
 }
