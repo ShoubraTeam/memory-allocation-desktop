@@ -1,50 +1,54 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package memalloc;
 
 /**
  *
  * @author HANIN
  */
-import java.util.Random;
 
-public class Process {
-    Random r=new Random();
-    private static int ID = 0;
-    private int size = (r.nextInt( 256)) + 1;
-    private int time = (r.nextInt( 20000)) + 1;
+class Process {
+    private static int idCounter = 0;
+    private final int id;
+    private final int size;
+    private int time;
     private MemBlock assignedBlock;
-    
-    public Process(){
-        ++ID;
+
+    public Process(int size, int time) {
+        this.id = ++idCounter;
+        this.size = size;
+        this.time = time;
     }
-    
-    void assignMemBlock(MemBlock block){
-        assignedBlock = block;
+
+    public int getSize() {
+        return this.size;
     }
-    public int getTime(){
-        return time;
+
+    public int getTime() {
+        return this.time;
     }
-    public int getID(){
-        return ID;
+
+    public void setTime(int time) {
+        this.time = time;
     }
-    public int getSize(){
-        return size ;
+
+    public MemBlock getAssignedBlock() {
+        return this.assignedBlock;
     }
-    public MemBlock getAssignedBlock(){
-        return assignedBlock ;
-    }
-    public void setTime(){
-        this.time-=1000;
-    }
+
     public void setAssignedBlock(MemBlock assignedBlock) {
         this.assignedBlock = assignedBlock;
     }
 
+    public int getId() {
+        return this.id;
+    }
+
+    public void decrementBySecond() {
+        this.time -= 1000;
+    }
+
     @Override
-    public String toString(){
-        return "Process " + id + " with size: " + size;
+    public String toString() {
+        return "Process ID: " + id + " with size: " + size + " and time needed: " + time;
     }
 }
+
