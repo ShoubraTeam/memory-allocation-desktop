@@ -46,8 +46,8 @@ The system works as follows:
 
 Clone the repo and navigate to it:
 
-- `git clone https://github.com/ShoubraTeam/memory-allocation-desktop.git
-- `cd memory-allocation-desktop
+- `git clone https://github.com/ShoubraTeam/memory-allocation-desktop.git`
+- `cd memory-allocation-desktop`
 
 ### Build and Run the Application
 
