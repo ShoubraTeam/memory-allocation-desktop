@@ -9,11 +9,17 @@ class MemAlloc {
 
     private final long RANDOM_SEED = System.currentTimeMillis();
     private final Random random = new Random(RANDOM_SEED);
+    //new                  old
+    //28                  //21
+    //15                  //15
+    //25                  //25
+    //22                  //25
+    //17                  //17
 
     private List<MemBlock> memoryBlocks = new ArrayList<>();
     private final Queue<Process> startingList = new LinkedList<>();
     private final Queue<Process> runningList = new LinkedList<>();
-    static CustomPriorityQueue<Process> waitingList = new CustomPriorityQueue<Process>();
+    static CustomPriorityQueue<Process> waitingList = new CustomPriorityQueue<>();
 
     public static void main(String[] args) {
         MemAlloc memAlloc = new MemAlloc();
@@ -42,7 +48,6 @@ class MemAlloc {
             System.out.println("At time: " + (++timeElapsed));
             dispatchProcess();
             updateRunningProcesses();
-//            updateLists();
             displayProcesses();
             System.out.println("-----------------------");
             try {
@@ -71,22 +76,30 @@ class MemAlloc {
         }
     }
 
-    /*
-    * Running Processes:
-    * Process ID: 8, Size: 400, Time Needed: 17
-    * Waiting Processes:
-    * Process ID: 7, Size: 405, Time Needed: 6970
-    * */
-
     boolean allocateMemory(Process process) {
-        for (MemBlock block : memoryBlocks) {
-            System.out.println("Trying to allocate process ID: " + process.getId() + " with size = " + process.getSize() + " and block size = " + block.getSize());
-            if (block.getSize() >= process.getSize()) {
-                process.setAssignedBlock(new MemBlock(block.getStartAddress(), block.getStartAddress() + process.getSize() - 1));
-                block.setStartAddress(block.getStartAddress() + process.getSize());
-                block.setSize(block.getSize() - process.getSize());
-                return true;
+//        for (MemBlock block : memoryBlocks) {
+//            System.out.println("Trying to allocate process ID: " + process.getId() + " with size = " + process.getSize() + " and block size = " + block.getSize());
+//            if (block.getSize() >= process.getSize()) {
+//                process.setAssignedBlock(new MemBlock(block.getStartAddress(), block.getStartAddress() + process.getSize() - 1));
+//                block.setStartAddress(block.getStartAddress() + process.getSize());
+//                block.setSize(block.getSize() - process.getSize());
+//                return true;
+//            }
+//        }
+
+
+        int index = -1;
+        for (int i = 0; i < memoryBlocks.size(); i++) {
+            if (memoryBlocks.get(i).getSize() >= process.getSize()){
+                if (index == -1) index = i;
+                else if(memoryBlocks.get(index).getSize() > memoryBlocks.get(i).getSize())index = i;
             }
+        }
+        if (index != -1){
+            process.setAssignedBlock(new MemBlock(memoryBlocks.get(index).getStartAddress(), memoryBlocks.get(index).getStartAddress() + process.getSize() - 1));
+            memoryBlocks.get(index).setStartAddress(memoryBlocks.get(index).getStartAddress() + process.getSize());
+            memoryBlocks.get(index).setSize(memoryBlocks.get(index).getSize() - process.getSize());
+            return true;
         }
         return false;
     }
@@ -115,7 +128,6 @@ class MemAlloc {
     }
 
     void mergeMemoryBlocks() {
-//        Collections.sort(memoryBlocks, Comparator.comparingInt(block -> block.startAddress));
         List<MemBlock> mergedBlocks = new ArrayList<>();
         MemBlock previous = null;
         for (MemBlock block : memoryBlocks) {
@@ -137,15 +149,6 @@ class MemAlloc {
             System.out.println("[MemBlock] Start address = " + memBlock.getStartAddress() + ", end address = " + memBlock.getEndAddress() + ", and size = " + memBlock.getSize());
         }
     }
-
-//    void updateLists() {
-//        if (waitingList.isEmpty())return;
-//        Process process =waitingList.peek();
-//        if (allocateMemory(process)){
-//            waitingList.remove();
-//            runningList.add(process);
-//        }
-//    }
 
     void displayProcesses() {
         System.out.println("Running Processes:");
