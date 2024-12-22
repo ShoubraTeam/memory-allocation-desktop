@@ -2,7 +2,12 @@
 
 ## Overview
 
-A simulation of a basic memory allocation and scheduling mechanism using Java. This project is built for Data Structures course at Shoubra Faculty of Engineering, Computer Engineering department.
+A simulation of a basic memory allocation and scheduling mechanism using Java.
+
+- University: Benha University
+- College: Shoubra Faculty of Engineering
+- Department: Computer Engineering
+- Course: Data Structures
 
 ## Features
 
